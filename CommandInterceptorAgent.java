@@ -2,6 +2,8 @@ import javassist.*;
 import java.lang.instrument.*;
 import java.security.ProtectionDomain;
 
+
+
 public class CommandInterceptorAgent implements ClassFileTransformer {
 
     public static void premain(String agentArgs, Instrumentation inst) {
@@ -12,8 +14,10 @@ public class CommandInterceptorAgent implements ClassFileTransformer {
     public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined,
                             ProtectionDomain protectionDomain, byte[] classfileBuffer)
             throws IllegalClassFormatException {
-
-        if (className.equals("java/lang/ProcessImpl")) {
+        System.out.println("Loaded class: " + className);  
+        // return transformClass(classfileBuffer);
+        if (className.equals("java/lang/ProcessImpl")|| className.equals("java/lang/UNIXprocess") || className.equals("java/io/FileInputStream") || className.startsWith("java/io/FileOutputStream")) {
+            System.out.println("catched class: " + className+"\n");
             return transformClass(classfileBuffer);
         }
         return classfileBuffer;
@@ -25,10 +29,17 @@ public class CommandInterceptorAgent implements ClassFileTransformer {
             CtClass cc = cp.makeClass(new java.io.ByteArrayInputStream(classfileBuffer));
 
             // Find all methods named 'start' in java.lang.ProcessImpl
-            CtMethod[] methods = cc.getDeclaredMethods("start");
+            // CtMethod[] methods = cc.getDeclaredMethods("start");
+            CtMethod[] methods = cc.getDeclaredMethods();
             for (CtMethod method : methods) {
                 // Insert code at the beginning of the method
-                method.insertBefore(getInsertionCode());
+                // method.insertBefore(getInsertionCode());
+                    if (method.getName().equals("start")) {
+                        method.insertBefore(getInsertionCode());
+                    } else {
+                        // System.out.println(method.getName());
+                        // method.insertBefore(getInsertionFileRead());
+                    }
             }
 
             return cc.toBytecode();
@@ -51,5 +62,9 @@ public class CommandInterceptorAgent implements ClassFileTransformer {
                "        System.out.println(\"    \" + stackTrace[i]);" +
                "    }" +
                "}";
+    }
+    private String getInsertionFileRead() {
+        return "{" +
+               "    System.out.println(\"Intercepted command execution\");";
     }
 }
