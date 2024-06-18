@@ -10,6 +10,25 @@ public class CommandInterceptorAgent implements ClassFileTransformer {
         inst.addTransformer(new CommandInterceptorAgent());
     }
 
+    public static void agentmain(String agentArgs, Instrumentation inst) {
+        CommandInterceptorAgent agent = new CommandInterceptorAgent();
+        inst.addTransformer(agent, true);
+        System.out.println("Agent attached.");
+
+        // Retransform already loaded classes
+        try {
+            Class<?>[] loadedClasses = inst.getAllLoadedClasses();
+            for (Class<?> clazz : loadedClasses) {
+                if (inst.isModifiableClass(clazz) && (clazz.getName().equals("java.io.FileInputStream") || clazz.getName().equals("java.io.FileOutputStream"))) {
+                    inst.retransformClasses(clazz);
+                }
+            }
+        } catch (UnmodifiableClassException e) {
+            e.printStackTrace();
+        }
+    }
+
+
     @Override
     public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined,
                             ProtectionDomain protectionDomain, byte[] classfileBuffer)
