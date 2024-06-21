@@ -18,7 +18,7 @@ public class FileIOTest {
             fis.close();
 
             // 保持程序运行以便加载 Agent
-            System.out.println("Waiting...");
+            System.out.println("Waiting....");
             Thread.sleep(60000); // 等待 60 秒
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
